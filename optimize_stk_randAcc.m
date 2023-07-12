@@ -2,7 +2,8 @@ function [J1, X1i,X1o,X1c, F1, Rss1] = optimize_stk_randAcc(Fs, Tu, W, RssMax,..
     H_ASL, Ttol, H_ISL, Ttol_S,...
     lamda, Sigma_square, beta_time, beta_enengy,...
     k,...
-    userNumber, serverNumber, sub_bandNumber ...
+    userNumber, serverNumber, sub_bandNumber, ...
+    G ...
     )
     %封装参数
     para.beta_time = beta_time;               %时间/能耗偏好
@@ -18,6 +19,7 @@ function [J1, X1i,X1o,X1c, F1, Rss1] = optimize_stk_randAcc(Fs, Tu, W, RssMax,..
     para.Fs = Fs;                             %服务器运算能力矩阵
     para.RssMax = RssMax;
     para.k = k; 
+    para.G = G; 
     
     [J1, X1i,X1o,X1c, F1,Rss1] = ta( ...
     userNumber,...              % 用户个数
@@ -33,7 +35,46 @@ function [J, Xi,Xo,Xc, F,Rss] = ta( ...
     para...                     % 所需参数
 )
 %TA Task allocation,任务分配算法
-X = genOriginX(userNumber, serverNumber,sub_bandNumber,para);    %得到初始X
-[J, F,Rss] = RA(X,para);
+[Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para);    %得到初始X
+[J, F,Rss] = RA(Xi,Xo,Xc,para);
+end
+
+function [Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para)
+%     根据para中接入H_ASL随机选择一个不为零的置为一
+    Xi = zeros(userNumber, serverNumber,sub_bandNumber);
+    Xo = zeros(userNumber, serverNumber,sub_bandNumber);
+    Xc = zeros(userNumber, serverNumber);
+    H_ASL = para.H_ASL;
+    for user_in = 1:userNumber
+        user_ASL_vec = H_ASL(user_in);
+        positiveIndices = find(user_ASL_vec > 0);
+        flag = 0;
+        while flag == 0
+            randomServer = positiveIndices(randi(numel(positiveIndices)));
+            for band = 1:sub_bandNumber
+%                 sumResult = sum(Xi(:, randomServer, band));
+               if sum(Xi(:, randomServer, band)) == 0
+                   Xi(user_in, randomServer, band) = 1;
+                   flag = 1;
+                   break
+               end
+            end
+        end
+        flag = 0;
+        while flag == 0
+            randomServer = positiveIndices(randi(numel(positiveIndices)));
+            for band = 1:sub_bandNumber
+               if sum(Xo(:, randomServer, band)) == 0
+                   Xo(user_in, randomServer, band) = 1;
+                   flag = 1;
+                   break
+               end
+            end
+        end
+        randomCserverNumber = randi(serverNumber);  % 生成1到N区间内的随机数
+        Xc(user_in, randomCserverNumber) = 1;
+    end
+    
+    
 
 end

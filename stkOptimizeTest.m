@@ -6,13 +6,34 @@ sub_bandNumber = 4;          %子带个数
 % 生成信道增益矩阵以及Ttol矩阵
 % 卫星通信信道增益很差，因此考虑任务数据量较小但计算量很大的任务
 pathStr = 'D:\sys\Resource_Allocation\STK\STK\Sc_PGSateNet\PGSateNet.sc';
-num_begin = 1;
-num_end = 8;
-stk_aircraft_construct_func(pathStr,num_begin, num_end);
+% num_begin = 1;
+% num_end = 8;
+% stk_aircraft_construct_func(pathStr,num_begin, num_end);
+
 % [H_ASL,Ttol,H_ISL,Ttol_S] = stkIriGenGain(sub_bandNumber,pathStr);
 
 % save UAVsat230712_improve.mat H_ASL Ttol H_ISL Ttol_S;
 load("UAVsat230712_improve.mat")
+
+% 图生成
+% 获取矩阵的维度
+n = size(H_ISL, 1);
+% 创建一个空的加权图对象
+G = graph();
+% 添加节点到图中
+G = addnode(G, n);
+% 遍历矩阵元素，将大于0的元素添加为边，并设置对应的权重
+for i = 2:n
+    for j = 1:i-1
+        if H_ISL(i, j) > 0
+            G = addedge(G, i, j, 1/H_ISL(i, j));
+        end
+    end
+end
+% 输出加权图对象
+% disp(G);
+% plot(G,'EdgeLabel',G.Edges.Weight)
+
 % 设定：用户1和用户2是一对，用户3和用户4是一对……
 [userNumber, serverNumber, ~ ] = size(H);
 
@@ -53,11 +74,12 @@ data_show(1,3) = {'Computing Time'};
 
 disp('Rand Acc Computing')
 tic;
-[J1, X1, F1, Rss1] = optimize_stk_randAcc(Fs, Tu, W, RssMax,...
+[J1, X1i,X1o,X1c, F1, Rss1] = optimize_stk_randAcc(Fs, Tu, W, RssMax,...
     H_ASL, Ttol, H_ISL, Ttol_S,...
     lamda, Sigma_square, beta_time, beta_enengy,...
     k,...
-    userNumber, serverNumber, sub_bandNumber ...
+    userNumber, serverNumber, sub_bandNumber, ...
+    G...
     );
 Rand_time = toc;
 Rand_objective = J1;
