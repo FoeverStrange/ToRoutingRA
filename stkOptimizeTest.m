@@ -35,7 +35,7 @@ end
 % plot(G,'EdgeLabel',G.Edges.Weight)
 
 % 设定：用户1和用户2是一对，用户3和用户4是一对……
-[userNumber, serverNumber, ~ ] = size(H);
+[userNumber, serverNumber, ~ ] = size(H_ASL);
 
 Fs = 40e10 * ones(serverNumber,1);  %服务器运算能力矩阵
 

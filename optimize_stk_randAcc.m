@@ -46,7 +46,7 @@ function [Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para)
     Xc = zeros(userNumber, serverNumber);
     H_ASL = para.H_ASL;
     for user_in = 1:userNumber
-        user_ASL_vec = H_ASL(user_in);
+        user_ASL_vec = H_ASL(user_in,:);
         positiveIndices = find(user_ASL_vec > 0);
         flag = 0;
         while flag == 0
