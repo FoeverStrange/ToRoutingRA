@@ -8,3 +8,12 @@ G = graph(s,t,weights);
 plot(G,'EdgeLabel',G.Edges.Weight)
 
 [P,d] = shortestpath(G,3,8)
+
+vector = [-2, 0, 3, 0, 5, -1, 4, 0];
+vector = vector';
+
+% 使用逻辑索引找到大于零的元素
+positiveElements = vector > 0;
+
+% 找到大于零的元素的序号
+indices = find(positiveElements)

@@ -47,6 +47,7 @@ function [Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para)
     H_ASL = para.H_ASL;
     for user_in = 1:userNumber
         user_ASL_vec = H_ASL(user_in,:);
+        user_out_ASL_vec = H_ASL(mod(user_in*2,userNumber)+1,:);
         positiveIndices = find(user_ASL_vec > 0);
         flag = 0;
         while flag == 0
@@ -60,6 +61,7 @@ function [Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para)
                end
             end
         end
+        positiveIndices = find(user_out_ASL_vec > 0);
         flag = 0;
         while flag == 0
             randomServer = positiveIndices(randi(numel(positiveIndices)));

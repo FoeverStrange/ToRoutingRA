@@ -37,7 +37,7 @@ end
 % 设定：用户1和用户2是一对，用户3和用户4是一对……
 [userNumber, serverNumber, ~ ] = size(H_ASL);
 
-Fs = 40e10 * ones(serverNumber,1);  %服务器运算能力矩阵
+Fs = 4e8 * ones(serverNumber,1);  %服务器运算能力矩阵
 
 T0.data = [];                      %任务数据大小
 T0.circle = [];                    %任务所需时钟周期
