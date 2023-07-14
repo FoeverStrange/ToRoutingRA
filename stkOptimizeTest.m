@@ -30,6 +30,16 @@ for i = 2:n
         end
     end
 end
+[n_user,n_server] = size(H_ASL);
+G = addnode(G, n_user);
+for i = 1:n_user
+    for j = 1:n_server
+        if H_ASL(i, j) > 0
+            G = addedge(G, n_server+i, j, 1/H_ASL(i, j));
+        end
+    end
+end
+
 % 输出加权图对象
 % disp(G);
 % plot(G,'EdgeLabel',G.Edges.Weight)
