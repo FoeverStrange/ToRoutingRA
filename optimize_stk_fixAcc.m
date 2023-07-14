@@ -1,4 +1,4 @@
-function [J1, X1i,X1o,X1c, F1, Rss_i, Rss_o] = optimize_stk_randAcc(Fs, Tu, W, RssMax,...
+function [J1, X1i,X1o,X1c, F1, Rss_i, Rss_o] = optimize_stk_fixAcc(Fs, Tu, W, RssMax,...
     H_ASL, Ttol, H_ISL, Ttol_S,...
     lamda, Sigma_square, beta_time, beta_enengy,...
     k,...
@@ -30,6 +30,7 @@ function [J1, X1i,X1o,X1c, F1, Rss_i, Rss_o] = optimize_stk_randAcc(Fs, Tu, W, R
     para ...                    % 所需参数
     );
 end
+
 function [J, Xi,Xo,Xc, F,Rss_i, Rss_o] = ta( ...
     userNumber,...              % 用户个数
     serverNumber,...            % 服务器个数
@@ -37,11 +38,10 @@ function [J, Xi,Xo,Xc, F,Rss_i, Rss_o] = ta( ...
     para...                     % 所需参数
 )
 %TA Task allocation,任务分配算法
-[Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para);    %得到初始X
+[Xi,Xo,Xc] = genOriginXFix(userNumber, serverNumber,sub_bandNumber,para);    %得到初始X
 [J, F,Rss_i, Rss_o] = RA(Xi,Xo,Xc,para);
 end
-
-function [Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para)
+function [Xi,Xo,Xc] = genOriginXFix(userNumber, serverNumber,sub_bandNumber,para)
 %     根据para中接入H_ASL随机选择一个不为零的置为一
     Xi = zeros(userNumber, serverNumber,sub_bandNumber);
     Xo = zeros(userNumber, serverNumber,sub_bandNumber);
@@ -59,6 +59,7 @@ function [Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para)
 %                 sumResult = sum(Xi(:, randomServer, band));
                if sum(Xi(:, randomServer, band)) == 0
                    Xi(user_in, randomServer, band) = 1;
+                   Xc(user_in, randomServer) = 1;
                    flag = 1;
                    break
                end
@@ -76,10 +77,7 @@ function [Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para)
                end
             end
         end
-        randomCserverNumber = randi(serverNumber);  % 生成1到N区间内的随机数
-        Xc(user_in, randomCserverNumber) = 1;
+%         randomCserverNumber = randi(serverNumber);  % 生成1到N区间内的随机数
+%         Xc(user_in, randomCserverNumber) = 1;
     end
-    
-    
-
 end

@@ -1,34 +1,37 @@
-function [Jx, F, Rss] = RA(Xi,Xo,Xc,para)
+function [Jx, F, Rss_i, Rss_o] = RA(Xi,Xo,Xc,para)
 
 [userNumber, serverNumber, subbandNumber] = size(Xi);
 G = para.G;
 %     RA 先计算router，再计算资源分配
-    Jx = 0;
-    F = 0;
-    Rss = 0;
+%     Jx = 0;
+%     F = 0;
+%     Rss = 0;
 % 最短路径计算
 Xi_temp = sum(Xi, 3);
 Xo_temp = sum(Xo, 3);
 % 最短路径，sum(1/H)存储
 H_sum = zeros(userNumber, 4);
 H_ASL = para.H_ASL;
+userP = para.userP;
 for user = 1:userNumber
     server_in = find(Xi_temp(user, :) == 1);
     server_out = find(Xo_temp(user, :) == 1);
     server_cp = find(Xc(user, :) == 1);
-    Hasl_temp = H_ASL(user,server_out);
+    user_out = userP(user);
+    Hasl_temp = H_ASL(user,server_in);
+    Has2_temp = H_ASL(user_out,server_out);
     
     [P,d] = shortestpath(G,server_in,server_cp);
     H_sum(user,1) = length(P);
-    H_sum(user,2) = d;
+    H_sum(user,2) = d+Hasl_temp;
     [P,d] = shortestpath(G,server_cp,server_out);
     H_sum(user,3) = length(P);
-    H_sum(user,4) = d+Hasl_temp;
+    H_sum(user,4) = d+Has2_temp;
 end
 
 [F,res_cra] = cra(Xc,para);        %计算资源分配
 % 通信资源分配
-[Rss, res_comu] = Rss_second_order_derivative(H_sum,para); 
+[Rss_i, Rss_o, res_comu] = Rss_second_order_derivative(H_sum,para); 
 
 Jx = res_cra + res_comu;
 end
@@ -103,9 +106,10 @@ res_comu = 0;
     RssMax = para.RssMax;
     W = para.W;
     n = 5;
+    shrink = para.shrink;
     for user = 1:userNumber
         du = Tu(user).data;
-        [phi_i, phie_i,phi_o, phie_o] = getPhie(H_sum, beta_enengy, beta_time, Sigma_square, du);
+        [phi_i, phie_i,phi_o, phie_o] = getPhie(H_sum, beta_enengy, beta_time, Sigma_square, du,shrink,user);
 %         入
         if getPi_s(RssMax, phi_i, phie_i, W) <=0
             Rss_i = RssMax;
@@ -146,11 +150,12 @@ res_comu = 0;
 
 end
 
-function [phi_i, phie_i,phi_o, phie_o] = getPhie(H_sum, beta_enengy, beta_time, sigma, du)
-    phi_i = beta_enengy * sigma * H_sum(2) * du;
-    phie_i = H_sum(1)*beta_time*du - phi_i;
-    phi_o = beta_enengy * sigma * H_sum(4)*du;
-    phie_o = H_sum(3)*beta_time*du - phi_o;
+function [phi_i, phie_i,phi_o, phie_o] = getPhie(H_sum, beta_enengy, beta_time, sigma, du,shrink,user)
+    phi_i = beta_enengy(user) * sigma * H_sum(user,2) * du;
+    phie_i = H_sum(user,1)*beta_time(user)*du - phi_i;
+    du = du/shrink;
+    phi_o = beta_enengy(user) * sigma * H_sum(user,4)*du;
+    phie_o = H_sum(user,3)*beta_time(user)*du - phi_o;
 end
 function Pi_s = getPi_s(R, phi, phie, W)
     Pi_s = R * (phie * 2^(R/W)) - phi - phie*2^(R/W);

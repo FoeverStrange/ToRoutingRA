@@ -1,4 +1,4 @@
-function [J1, X1i,X1o,X1c, F1, Rss_i, Rss_o] = optimize_stk_randAcc(Fs, Tu, W, RssMax,...
+function [J1, X1i,X1o,X1c, F1, Rss_i, Rss_o] = optimize_stk_GreedyAcc(Fs, Tu, W, RssMax,...
     H_ASL, Ttol, H_ISL, Ttol_S,...
     lamda, Sigma_square, beta_time, beta_enengy,...
     k,...
@@ -30,6 +30,7 @@ function [J1, X1i,X1o,X1c, F1, Rss_i, Rss_o] = optimize_stk_randAcc(Fs, Tu, W, R
     para ...                    % 所需参数
     );
 end
+
 function [J, Xi,Xo,Xc, F,Rss_i, Rss_o] = ta( ...
     userNumber,...              % 用户个数
     serverNumber,...            % 服务器个数
@@ -37,11 +38,11 @@ function [J, Xi,Xo,Xc, F,Rss_i, Rss_o] = ta( ...
     para...                     % 所需参数
 )
 %TA Task allocation,任务分配算法
-[Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para);    %得到初始X
+[Xi,Xo,Xc] = genOriginXgreedy(userNumber, serverNumber,sub_bandNumber,para);    %得到初始X
 [J, F,Rss_i, Rss_o] = RA(Xi,Xo,Xc,para);
 end
 
-function [Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para)
+function [Xi,Xo,Xc] = genOriginXgreedy(userNumber, serverNumber,sub_bandNumber,para)
 %     根据para中接入H_ASL随机选择一个不为零的置为一
     Xi = zeros(userNumber, serverNumber,sub_bandNumber);
     Xo = zeros(userNumber, serverNumber,sub_bandNumber);
@@ -51,23 +52,32 @@ function [Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para)
     for user_in = 1:userNumber
         user_ASL_vec = H_ASL(user_in,:);
         user_out_ASL_vec = H_ASL(userP(user_in),:);
-        positiveIndices = find(user_ASL_vec > 0);
-        flag = 0;
+%         positiveIndices = find(user_ASL_vec > 0);
+        sorted_vector = sort(user_ASL_vec, 'descend');
+        sorted_vector_out = sort(user_out_ASL_vec, 'descend');
+%         nth_largest_element = sorted_vector(n); % 获取第n大的元素
+%         nth_largest_element_position = find(vector == nth_largest_element); % 找到第n大元素的位置
+        flag = 0;n=1;
         while flag == 0
-            randomServer = positiveIndices(randi(numel(positiveIndices)));
+            nth_largest_element = sorted_vector(n);
+            randomServer = find(sorted_vector == nth_largest_element);
             for band = 1:sub_bandNumber
 %                 sumResult = sum(Xi(:, randomServer, band));
                if sum(Xi(:, randomServer, band)) == 0
                    Xi(user_in, randomServer, band) = 1;
+                   Xc(user_in, randomServer) = 1;
                    flag = 1;
                    break
                end
             end
+            n= n+1;
         end
-        positiveIndices = find(user_out_ASL_vec > 0);
-        flag = 0;
+        
+%         positiveIndices = find(user_out_ASL_vec > 0);
+        flag = 0;n=1;
         while flag == 0
-            randomServer = positiveIndices(randi(numel(positiveIndices)));
+            nth_largest_element = sorted_vector_out(n);
+            randomServer = find(sorted_vector_out == nth_largest_element);
             for band = 1:sub_bandNumber
                if sum(Xo(:, randomServer, band)) == 0
                    Xo(user_in, randomServer, band) = 1;
@@ -75,11 +85,9 @@ function [Xi,Xo,Xc] = genOriginX(userNumber, serverNumber,sub_bandNumber,para)
                    break
                end
             end
+            n = n+1;
         end
-        randomCserverNumber = randi(serverNumber);  % 生成1到N区间内的随机数
-        Xc(user_in, randomCserverNumber) = 1;
+%         randomCserverNumber = randi(serverNumber);  % 生成1到N区间内的随机数
+%         Xc(user_in, randomCserverNumber) = 1;
     end
-    
-    
-
 end
