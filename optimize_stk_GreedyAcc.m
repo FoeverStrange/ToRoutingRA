@@ -71,6 +71,9 @@ function [Xi,Xo,Xc] = genOriginXgreedy(userNumber, serverNumber,sub_bandNumber,p
                end
             end
             n= n+1;
+            if n > serverNumber
+               break 
+            end
         end
         
 %         positiveIndices = find(user_out_ASL_vec > 0);
@@ -86,6 +89,9 @@ function [Xi,Xo,Xc] = genOriginXgreedy(userNumber, serverNumber,sub_bandNumber,p
                end
             end
             n = n+1;
+            if n > serverNumber
+               break 
+            end
         end
 %         randomCserverNumber = randi(serverNumber);  % 生成1到N区间内的随机数
 %         Xc(user_in, randomCserverNumber) = 1;

@@ -13,13 +13,30 @@ Xo_temp = sum(Xo, 3);
 H_sum = zeros(userNumber, 4);
 H_ASL = para.H_ASL;
 userP = para.userP;
+PANISH = 1*10^-15;
 for user = 1:userNumber
     server_in = find(Xi_temp(user, :) == 1);
     server_out = find(Xo_temp(user, :) == 1);
     server_cp = find(Xc(user, :) == 1);
+    if isempty(server_in)
+        H_sum(user,1) = 2;
+        H_sum(user,2) = 1/PANISH;
+        H_sum(user,3) = 2;
+        H_sum(user,4) = 1/PANISH;
+        continue
+    end
+     if isempty(server_out)
+        H_sum(user,1) = 5;
+        H_sum(user,2) = 1/PANISH;
+        H_sum(user,3) = 5;
+        H_sum(user,4) = 1/PANISH;
+        continue
+    end
     user_out = userP(user);
-    Hasl_temp = H_ASL(user,server_in);
-    Has2_temp = H_ASL(user_out,server_out);
+    temp1 = H_ASL(user,server_in);
+    temp2 = H_ASL(user_out,server_out);
+    Hasl_temp = min(1/temp1,1/PANISH);
+    Has2_temp = min(1/temp2,1/PANISH);
     
     [P,d] = shortestpath(G,server_in,server_cp);
     H_sum(user,1) = length(P);

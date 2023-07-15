@@ -7,13 +7,13 @@ sub_bandNumber = 4;          %子带个数
 % 卫星通信信道增益很差，因此考虑任务数据量较小但计算量很大的任务
 pathStr = 'D:\sys\Resource_Allocation\STK\STK\Sc_PGSateNet\PGSateNet.sc';
 % num_begin = 1;
-% num_end = 8;
+% num_end = 15;
 % stk_aircraft_construct_func(pathStr,num_begin, num_end);
 
 % [H_ASL,Ttol,H_ISL,Ttol_S] = stkIriGenGain(sub_bandNumber,pathStr);
 
-% save UAVsat230712_improve.mat H_ASL Ttol H_ISL Ttol_S;
-load("UAVsat230712_improve.mat")
+% save UAVsat230715_improve.mat H_ASL Ttol H_ISL Ttol_S;
+load("UAVsat230715_improve.mat")
 
 % 图生成
 % 获取矩阵的维度
@@ -81,6 +81,9 @@ shrink = 10;
 userP = 1:userNumber;
 for user = 1:userNumber
     userP(user) = randi(userNumber);
+    if userP(user) == user
+        userP(user) = mod(user+1,userNumber)+1;
+    end
 end
 
 
@@ -149,6 +152,21 @@ H_objective = J4;
 data_show(5,1) = {'H'};
 data_show(5,2) = {H_objective};
 data_show(5,3) = {H_time};
+
+disp('HR Acc Computing')
+tic;
+[J5, X5i,X5o,X5c, F5, Rss5_i, Rss5_o] = optimize_stk_HRAcc(Fs, Tu, W, RssMax,...
+    H_ASL, Ttol, H_ISL, Ttol_S,...
+    lamda, Sigma_square, beta_time, beta_enengy,...
+    k,...
+    userNumber, serverNumber, sub_bandNumber, ...
+    G, shrink, userP...
+    );
+HR_time = toc;
+HR_objective = J5;
+data_show(6,1) = {'RouterH'};
+data_show(6,2) = {HR_objective};
+data_show(6,3) = {HR_time};
 
 disp('Mission Compeleted')
 
