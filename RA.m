@@ -35,8 +35,21 @@ for user = 1:userNumber
     user_out = userP(user);
     temp1 = H_ASL(user,server_in);
     temp2 = H_ASL(user_out,server_out);
-    Hasl_temp = min(1/temp1,1/PANISH);
-    Has2_temp = min(1/temp2,1/PANISH);
+    if temp1 == 0
+        Hasl_temp = 1/PANISH;
+    else
+        Hasl_temp = 1/temp1;
+    end
+    if temp2 == 0
+        Has2_temp = 1/PANISH;
+    else
+%         temp2
+%         user_out
+%         server_out
+        Has2_temp = 1/temp2;
+    end
+%     Hasl_temp = min(1/temp1,1/PANISH);
+%     Has2_temp = min(1/temp2,1/PANISH);
     
     [P,d] = shortestpath(G,server_in,server_cp);
     H_sum(user,1) = length(P);
@@ -53,6 +66,8 @@ end
 Jx = res_cra + res_comu;
 end
 function [F,res_cra] = cra(Xc,para)
+    res_cra = 0;
+    lamda = para.lamda;
     fs = para.Fs(1);
     beta_time = para.beta_time;
     beta_enengy = para.beta_enengy;
@@ -76,8 +91,8 @@ function [F,res_cra] = cra(Xc,para)
         Bu = zeros(n,1);
         for user_p = 1:n
             user = Xu(user_p);
-           Au(user_p) =  beta_time(user)*Tu(user).circle;
-           Bu(user_p) = beta_enengy(user) * k * Tu(user).circle;
+           Au(user_p) =  beta_time(user)*Tu(user).circle * lamda(user);
+           Bu(user_p) = beta_enengy(user) * k * Tu(user).circle* lamda(user);
         end
         
         fus_o = (Au./Bu).^(1/3);
@@ -95,8 +110,9 @@ v = X(n+1);
             Fs(Xu) = fus_o;
             F(:,server) =  Fs;
         end
-        res_cra = sum(Au./fus_o + Bu .* fus_o .^2);
-        
+        res_cra_temp = Au./fus_o + Bu .* fus_o .^2;
+%         res_cra_serverr = sum(res_cra_temp.*lamda(Xu));
+        res_cra = res_cra + sum(res_cra_temp);
     end
 
 % ½âkktÌõ¼þ
@@ -115,6 +131,7 @@ end
 
 function [Rss_i, Rss_o, res_comu] = Rss_second_order_derivative(H_sum,para)
 res_comu = 0;
+    lamda = para.lamda;
     [userNumber, ~] = size(H_sum);
     Tu = para.Tu;
     Sigma_square = para.Sigma_square;
@@ -162,7 +179,8 @@ res_comu = 0;
             end
             Rss_o = (Rss_r+Rss_l)/2;
         end
-        res_comu = res_comu + (phi_i + phie_i*2^(Rss_i/W))/Rss_i + (phi_o + phie_o*2^(Rss_o/W))/Rss_o;
+        res_comu_temp = (phi_i + phie_i*2^(Rss_i/W))/Rss_i + (phi_o + phie_o*2^(Rss_o/W))/Rss_o;
+        res_comu = res_comu + res_comu_temp*lamda(user);
     end
 
 end

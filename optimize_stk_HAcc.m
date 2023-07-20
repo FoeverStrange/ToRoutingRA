@@ -93,7 +93,7 @@ function [Xi,Xo,Xc] = genOriginXH(userNumber, serverNumber,sub_bandNumber,para)
         flag = 0;n=1;
         while flag == 0
             nth_largest_element = sorted_vector(n);
-            randomServer = find(sorted_vector == nth_largest_element);
+            randomServer = find(user_ASL_vec == nth_largest_element);
             for band = 1:sub_bandNumber
 %                 sumResult = sum(Xi(:, randomServer, band));
                if sum(Xi(:, randomServer, band)) == 0
@@ -113,7 +113,7 @@ function [Xi,Xo,Xc] = genOriginXH(userNumber, serverNumber,sub_bandNumber,para)
         flag = 0;n=1;
         while flag == 0
             nth_largest_element = sorted_vector_out(n);
-            randomServer = find(sorted_vector_out == nth_largest_element);
+            randomServer = find(user_out_ASL_vec == nth_largest_element);
             for band = 1:sub_bandNumber
                if sum(Xo(:, randomServer, band)) == 0
                    Xo(user_in, randomServer, band) = 1;
