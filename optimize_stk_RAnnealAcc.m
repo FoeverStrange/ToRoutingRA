@@ -45,50 +45,69 @@ alpha = 0.9;
 [Xi,Xo,Xc] = genOriginXH(userNumber, serverNumber,sub_bandNumber,para);    %得到初始X
 [J, F,Rss_i, Rss_o] = RA(Xi,Xo,Xc,para);
 % 迭代调整Xc，参考H算法
+flaj = 0;
 iterations = 1;
-while(T_min<T)
-   genUs = sum(Xc,1);
-   probabilities = genUs / sum(genUs);
-   maxServerp = find(rand <= cumsum(probabilities), 1, 'first');
-   indices = find(Xc(:,maxServerp) > 0);
-   user_temp = indices(end);
-   Xc_temp = Xc;
-   Xc_temp(user_temp,maxServerp) = 0;
-   Jm = J*(1+0.1);
-   Fm = F;
-   Rss_im = Rss_i;
-   Rss_om = Rss_o;
-   for server_temp = 1:serverNumber
-       Xc_temp1 = Xc_temp;
-       Xc_temp1(user_temp,server_temp) = 1;
-       [J_t, F_t,Rss_i_t, Rss_o_t] = RA(Xi,Xo,Xc_temp1,para);
-       if J_t < Jm
-          Jm = J_t; 
-          Fm = F_t;
-          Rss_im = Rss_i_t;
-          Rss_om = Rss_o_t;
-       end
-   end
-   if Jm < J
+H_ASL = para.H_ASL;
+T = userNumber/10;  %初始温度
+T_min = 10^-1;
+alpha = 0.84;
+while(T>T_min)
+    genUs = sum(Xc,1);
+    genUs(genUs<2) = 0;
+    probabilities = genUs / sum(genUs);
+%     [~,maxServerp] = max(genUs);
+%     indices = find(genUs(:,maxServerp) > 0);
+maxServerp = find(rand <= cumsum(probabilities), 1, 'first');
+indices = find(Xc(:,maxServerp) > 0);
+% 找到最不重要的user
+    user_temp = indices(end);
+    Xi_temp = Xi;
+    Xc_temp = Xc;
+%     把这个user占用的子载波置零
+    sub_band_temp = find(Xi_temp(user_temp,maxServerp,:)==1);
+    Xi_temp(user_temp,maxServerp,sub_band_temp) = 0;
+    Xc_temp(user_temp,maxServerp) = 0;
+
+    user_ASL_vec = H_ASL(user_temp,:);
+    sorted_vector = sort(user_ASL_vec, 'descend');
+    serverNumTemp = sum(sorted_vector>0);
+    Jm = J;
+    Fm = F;
+    Rss_im = Rss_i;
+    Rss_om = Rss_o;
+    for n = 1:serverNumTemp
+        ASL_temp = sorted_vector(n);
+%         找到ASL_temp 对应的server以及空闲subband
+        mServer = find(user_ASL_vec == ASL_temp);
+        for band = 1:sub_bandNumber
+%                 sumResult = sum(Xi(:, randomServer, band));
+               if sum(Xi(:, mServer, band)) == 0
+                   Xi_temp1 = Xi_temp;
+                   Xc_temp1 = Xc_temp;
+                   Xi_temp1(user_temp, mServer, band) = 1;
+                   Xc_temp1(user_temp, mServer) = 1;
+                   [J_t, F_t,Rss_i_t, Rss_o_t,res_cra,res_comu] = RA(Xi_temp1,Xo,Xc_temp1,para);
+                   if J_t < Jm*(1-0.00001)
+                        Jm = J_t; 
+                        Fm = F_t;
+                        Rss_im = Rss_i_t;
+                        Rss_om = Rss_o_t;
+                   end
+                   break
+               end
+        end
+    end
+    if Jm < J
        J = Jm;
        F = Fm;
        Rss_i = Rss_im;
        Rss_o = Rss_om;
-   else
-        delta = J-Jm;
-        pro=getProbability(delta,T);
-        if(pro>rand)
-            J = Jm;
-            F = Fm;
-            Rss_i = Rss_im;
-            Rss_o = Rss_om;
-        end
-%         flaj = flaj + 1;
-   end
-    T = T * alpha;
+    else
+        flaj = flaj + 1;
+    end
     picture(iterations,1) = J;
-    picture(iterations,2) = T;
     iterations = iterations +1;
+    T = T * alpha;
 end
 %     figure()
 %     hold on
@@ -149,7 +168,6 @@ for user = 1:userNumber
                 G = rmedge(G, serverNumber+user_out, randomServer_out);
             end
         end
-        
     end
     
 end

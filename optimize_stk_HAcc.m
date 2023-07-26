@@ -76,8 +76,8 @@ indices = find(Xc(:,maxServerp) > 0);
     picture(iterations,1) = J;
     iterations = iterations +1;
 end
-    figure()
-    plot(1:iterations-1,picture(:,1));
+%     figure()
+%     plot(1:iterations-1,picture(:,1));
 end
 
 function [Xi,Xo,Xc] = genOriginXH(userNumber, serverNumber,sub_bandNumber,para)

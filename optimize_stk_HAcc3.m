@@ -1,4 +1,4 @@
-function [J1, X1i,X1o,X1c, F1, Rss_i, Rss_o,res_cra,res_comu] = optimize_stk_HAcc2(Fs, Tu, W, RssMax,...
+function [J1, X1i,X1o,X1c, F1, Rss_i, Rss_o,res_cra,res_comu] = optimize_stk_HAcc3(Fs, Tu, W, RssMax,...
     H_ASL, Ttol, H_ISL, Ttol_S,...
     lamda, Sigma_square, beta_time, beta_enengy,...
     k,...
@@ -29,6 +29,24 @@ function [J1, X1i,X1o,X1c, F1, Rss_i, Rss_o,res_cra,res_comu] = optimize_stk_HAc
     sub_bandNumber,...          % 子带个数
     para ...                    % 所需参数
     );
+    for i= 1:4
+        [J2, X2i,X2o,X2c, F2,Rss_i2, Rss_o2,res_cra,res_comu] = ta( ...
+    userNumber,...              % 用户个数
+    serverNumber,...            % 服务器个数
+    sub_bandNumber,...          % 子带个数
+    para ...                    % 所需参数
+    );
+    if J2 < J1
+        J1 = J2;
+        X1i = X2i;
+        X1o = X2o;
+        X1c = X2c;
+        F1 = F2;
+        Rss_i = Rss_i2;
+        Rss_o = Rss_o2;
+    end
+    end
+    
 end
 
 function [J, Xi,Xo,Xc, F,Rss_i, Rss_o,res_cra,res_comu] = ta( ...
@@ -43,7 +61,10 @@ function [J, Xi,Xo,Xc, F,Rss_i, Rss_o,res_cra,res_comu] = ta( ...
 flaj = 0;
 iterations = 1;
 H_ASL = para.H_ASL;
-while(flaj<3)
+T = userNumber/10;  %初始温度
+T_min = 10^-1;
+alpha = 0.84;
+while(T>T_min)
     genUs = sum(Xc,1);
     genUs(genUs<2) = 0;
     probabilities = genUs / sum(genUs);
@@ -99,9 +120,10 @@ indices = find(Xc(:,maxServerp) > 0);
     end
     picture(iterations,1) = J;
     iterations = iterations +1;
+    T = T * alpha;
 end
 %     figure()
-%     plot(1:iterations-1,picture(:,1));
+    plot(1:iterations-1,picture(:,1));
 end
 
 function [Xi,Xo,Xc] = genOriginXH(userNumber, serverNumber,sub_bandNumber,para)
