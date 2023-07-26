@@ -47,7 +47,7 @@ end
 % 设定：用户1和用户2是一对，用户3和用户4是一对……
 [userNumber, serverNumber, ~ ] = size(H_ASL);
 
-Fs = 4e8 * ones(serverNumber,1);  %服务器运算能力矩阵
+Fs = 1e8 * ones(serverNumber,1);  %服务器运算能力矩阵
 
 T0.data = [];                      %任务数据大小
 T0.circle = [];                    %任务所需时钟周期
@@ -55,8 +55,8 @@ Tu = repmat(T0,userNumber,1);
 Tu_check = 1:userNumber;
 for i = 1:userNumber
     if ismember(i,Tu_check)
-        Tu(i).data = 10*8* 1024 * 8;
-        Tu(i).circle = 1000*10e9;
+        Tu(i).data = 1e3;
+        Tu(i).circle = 3000*1e6;
     else
         Tu(i).data = 0;
         Tu(i).circle = 0;
@@ -77,7 +77,7 @@ RssMax = 10 * 10^3; %10Mb
 Sigma_square = 1e-20;       %噪声方差
 W = 100e6;   %系统带宽100MHz
 k = 1 * 10^-26;  %芯片能耗系数
-shrink = 10;
+shrink = 3;
 userP = 1:userNumber;
 for user = 1:userNumber
     userP(user) = randi(userNumber);
@@ -140,7 +140,7 @@ data_show(4,3) = {Greedy_time};
 
 disp('H Acc Computing')
 tic;
-[J4, X4i,X4o,X4c, F4, Rss4_i, Rss4_o] = optimize_stk_HAcc(Fs, Tu, W, RssMax,...
+[J4, X4i,X4o,X4c, F4, Rss4_i, Rss4_o,res_cra,res_comu] = optimize_stk_HAcc(Fs, Tu, W, RssMax,...
     H_ASL, Ttol, H_ISL, Ttol_S,...
     lamda, Sigma_square, beta_time, beta_enengy,...
     k,...
@@ -167,6 +167,34 @@ HR_objective = J5;
 data_show(6,1) = {'RouterH'};
 data_show(6,2) = {HR_objective};
 data_show(6,3) = {HR_time};
+
+% disp('RAnneal Acc Computing')
+% tic;
+% [J6, X6i,X6o,X6c, F6, Rss6_i, Rss6_o] = optimize_stk_RAnnealAcc(Fs, Tu, W, RssMax,...
+%     H_ASL, Ttol, H_ISL, Ttol_S,...
+%     lamda, Sigma_square, beta_time, beta_enengy,...
+%     k,...
+%     userNumber, serverNumber, sub_bandNumber, ...
+%     G, shrink, userP...
+%     );
+% RAnneal_time = toc;
+% RAnneal_objective = J6;
+% data_show(7,1) = {'RAnneal'};
+% data_show(7,2) = {RAnneal_objective};
+% data_show(7,3) = {RAnneal_time};
+
+[J7, X7i,X7o,X7c, F7, Rss7_i, Rss7_o,res_cra,res_comu] = optimize_stk_HAcc2(Fs, Tu, W, RssMax,...
+    H_ASL, Ttol, H_ISL, Ttol_S,...
+    lamda, Sigma_square, beta_time, beta_enengy,...
+    k,...
+    userNumber, serverNumber, sub_bandNumber, ...
+    G, shrink, userP...
+    );
+H2_time = toc;
+H2_objective = J7;
+data_show(8,1) = {'H2'};
+data_show(8,2) = {H2_objective};
+data_show(8,3) = {H2_time};
 
 disp('Mission Compeleted')
 

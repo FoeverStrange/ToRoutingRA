@@ -1,4 +1,4 @@
-function [J1, X1i,X1o,X1c, F1, Rss_i, Rss_o,res_cra,res_comu] = optimize_stk_HAcc(Fs, Tu, W, RssMax,...
+function [J1, X1i,X1o,X1c, F1, Rss_i, Rss_o,res_cra,res_comu] = optimize_stk_HAcc2(Fs, Tu, W, RssMax,...
     H_ASL, Ttol, H_ISL, Ttol_S,...
     lamda, Sigma_square, beta_time, beta_enengy,...
     k,...
@@ -38,10 +38,11 @@ function [J, Xi,Xo,Xc, F,Rss_i, Rss_o,res_cra,res_comu] = ta( ...
     para...                     % 所需参数
 )
 %TA Task allocation,任务分配算法
-[Xi,Xo,Xc] = genOriginXH(userNumber, serverNumber,sub_bandNumber,para);    %得到初始X
+[Xi,Xo,Xc] = genOriginXFix(userNumber, serverNumber,sub_bandNumber,para);    %得到初始X
 [J, F,Rss_i, Rss_o,res_cra,res_comu] = RA(Xi,Xo,Xc,para);
 flaj = 0;
 iterations = 1;
+H_ASL = para.H_ASL;
 while(flaj<3)
     genUs = sum(Xc,1);
     genUs(genUs<2) = 0;
@@ -50,20 +51,43 @@ while(flaj<3)
 %     indices = find(genUs(:,maxServerp) > 0);
 maxServerp = find(rand <= cumsum(probabilities), 1, 'first');
 indices = find(Xc(:,maxServerp) > 0);
+% 找到最不重要的user
     user_temp = indices(end);
+    Xi_temp = Xi;
     Xc_temp = Xc;
+%     把这个user占用的子载波置零
+    sub_band_temp = find(Xi_temp(user_temp,maxServerp,:)==1);
+    Xi_temp(user_temp,maxServerp,sub_band_temp) = 0;
     Xc_temp(user_temp,maxServerp) = 0;
+
+    user_ASL_vec = H_ASL(user_temp,:);
+    sorted_vector = sort(user_ASL_vec, 'descend');
+    serverNumTemp = sum(sorted_vector>0);
     Jm = J;
-    for server_temp = 1:serverNumber
-       Xc_temp1 = Xc_temp;
-       Xc_temp1(user_temp,server_temp) = 1;
-       [J_t, F_t,Rss_i_t, Rss_o_t,res_cra,res_comu] = RA(Xi,Xo,Xc_temp1,para);
-       if J_t < Jm*(1-0.00001)
-          Jm = J_t; 
-          Fm = F_t;
-          Rss_im = Rss_i_t;
-          Rss_om = Rss_o_t;
-       end
+    Fm = F;
+    Rss_im = Rss_i;
+    Rss_om = Rss_o;
+    for n = 1:serverNumTemp
+        ASL_temp = sorted_vector(n);
+%         找到ASL_temp 对应的server以及空闲subband
+        mServer = find(user_ASL_vec == ASL_temp);
+        for band = 1:sub_bandNumber
+%                 sumResult = sum(Xi(:, randomServer, band));
+               if sum(Xi(:, mServer, band)) == 0
+                   Xi_temp1 = Xi_temp;
+                   Xc_temp1 = Xc_temp;
+                   Xi_temp1(user_temp, mServer, band) = 1;
+                   Xc_temp1(user_temp, mServer) = 1;
+                   [J_t, F_t,Rss_i_t, Rss_o_t,res_cra,res_comu] = RA(Xi_temp1,Xo,Xc_temp1,para);
+                   if J_t < Jm*(1-0.00001)
+                        Jm = J_t; 
+                        Fm = F_t;
+                        Rss_im = Rss_i_t;
+                        Rss_om = Rss_o_t;
+                   end
+                   break
+               end
+        end
     end
     if Jm < J
        J = Jm;

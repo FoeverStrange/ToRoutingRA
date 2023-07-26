@@ -53,7 +53,12 @@ function [Xi,Xo,Xc] = genOriginXFix(userNumber, serverNumber,sub_bandNumber,para
         user_out_ASL_vec = H_ASL(userP(user_in),:);
         positiveIndices = find(user_ASL_vec > 0);
         flag = 0;
+        cnt = 0;
         while flag == 0
+            cnt = cnt +1;
+            if cnt > 5
+               break 
+            end
             randomServer = positiveIndices(randi(numel(positiveIndices)));
             for band = 1:sub_bandNumber
 %                 sumResult = sum(Xi(:, randomServer, band));
@@ -66,8 +71,12 @@ function [Xi,Xo,Xc] = genOriginXFix(userNumber, serverNumber,sub_bandNumber,para
             end
         end
         positiveIndices = find(user_out_ASL_vec > 0);
-        flag = 0;
+        flag = 0;cnt = 0;
         while flag == 0
+            cnt = cnt +1;
+            if cnt > 5
+               break 
+            end
             randomServer = positiveIndices(randi(numel(positiveIndices)));
             for band = 1:sub_bandNumber
                if sum(Xo(:, randomServer, band)) == 0

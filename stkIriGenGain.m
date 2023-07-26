@@ -210,7 +210,7 @@ for row = 1:ISL_row
     TStol(uavIndex,satIndex,:) = ISL_range_Ttol{row,4} * ones(1,sub_bandNumber);
 end
 % 天线增益
-Hsat = Hsat * 10^5;
+Hsat = Hsat * 10^6;
 
 end
 
